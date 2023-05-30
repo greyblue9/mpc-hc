@@ -31,17 +31,17 @@ class TranslationDataIS(TranslationData):
                 match = TranslationDataIS.stringEntry.match(line)
                 if section and match:
                     if match.group(1) != u'langid':
-                        self.strings[(section + '_' + match.group(1), match.group(2).replace(u'%n', ur'\n'))] = ''
-                else:
-                    match = TranslationDataIS.sectionEntry.match(line)
-                    if match:
-                        section = match.group(1)
+                        self.strings[
+                            f'{section}_{match.group(1)}',
+                            match.group(2).replace(u'%n', ur'\n'),
+                        ] = ''
+                elif match := TranslationDataIS.sectionEntry.match(line):
+                    section = match.group(1)
 
     @staticmethod
     def translateIS(translationsConfigAndData, filenameBase, filenameRC):
         encoding = detectEncoding(filenameBase)
-        with codecs.open(filenameBase, 'r', encoding) as fBase, \
-                codecs.open(filenameRC, 'w', encoding) as fOut:
+        with (codecs.open(filenameBase, 'r', encoding) as fBase, codecs.open(filenameRC, 'w', encoding) as fOut):
             section = None
             sectionData = []
 
@@ -55,7 +55,7 @@ class TranslationDataIS(TranslationData):
                             end -= 1
                         sectionData = sectionData[:end]
 
-                        fOut.write(u'[' + section + u']')
+                        fOut.write(f'[{section}]')
                         for config, translationData in translationsConfigAndData:
                             fOut.write(u'\r\n')
                             translationData.translateISSection(config, section, sectionData, fOut)
@@ -74,10 +74,14 @@ class TranslationDataIS(TranslationData):
 
     def translateISSection(self, config, section, sectionData, fOut):
         for line in sectionData:
-            match = TranslationDataIS.stringEntry.match(line)
-            if match:
+            if match := TranslationDataIS.stringEntry.match(line):
                 if match.group(1) != u'langid':
-                    s = self.strings.get((section + '_' + match.group(1), match.group(2).replace(u'%n', ur'\n')))
+                    s = self.strings.get(
+                        (
+                            f'{section}_{match.group(1)}',
+                            match.group(2).replace(u'%n', ur'\n'),
+                        )
+                    )
                     if not s:
                         s = match.group(2)
                     line = '%s.%s=%s\r\n' % (

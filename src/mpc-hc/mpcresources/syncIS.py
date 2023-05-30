@@ -27,7 +27,7 @@ from UpdateIS import *
 
 
 def processPO(file):
-    ret = 'Updating PO file ' + file + '\n'
+    ret = f'Updating PO file {file}' + '\n'
     result = True
     try:
         UpdateISPO(file)
