@@ -85,14 +85,11 @@ class TranslationData:
         self.empty()
 
         if input[0]:
-            self.loadDataFromPO(filename + '.dialogs.' + ext,
-                                self.dialogs, 'dialogsHeader')
+            self.loadDataFromPO(f'{filename}.dialogs.{ext}', self.dialogs, 'dialogsHeader')
         if input[1]:
-            self.loadDataFromPO(filename + '.menus.' + ext,
-                                self.menus, 'menusHeader')
+            self.loadDataFromPO(f'{filename}.menus.{ext}', self.menus, 'menusHeader')
         if input[2]:
-            self.loadDataFromPO(filename + '.strings.' + ext,
-                                self.strings, 'stringsHeader')
+            self.loadDataFromPO(f'{filename}.strings.{ext}', self.strings, 'stringsHeader')
 
     def loadDataFromPO(self, filename, data, header=None):
         with codecs.open(filename, 'r', 'utf8') as f:
@@ -101,8 +98,7 @@ class TranslationData:
 
             hasNext = True
             while hasNext:
-                poEntry = self.readPOEntry(f, True)
-                if poEntry:
+                if poEntry := self.readPOEntry(f, True):
                     data[(poEntry[0], poEntry[1])] = poEntry[2]
                 else:
                     hasNext = False
@@ -111,8 +107,7 @@ class TranslationData:
         header = None
         line = f.readline()
         if line.startswith(u'#'):
-            header = []
-            header.append(line.rstrip(u'\r\n'))
+            header = [line.rstrip(u'\r\n')]
             for line in f:
                 line = line.rstrip(u'\r\n')
                 header.append(line)
@@ -132,8 +127,7 @@ class TranslationData:
 
         prevLineType = None
         for line in f:
-            match = TranslationData.poLine.match(line)
-            if match:
+            if match := TranslationData.poLine.match(line):
                 lineType = match.group(1)
                 if lineType is None:
                     lineType = prevLineType
@@ -156,14 +150,11 @@ class TranslationData:
         self.prepareHeaders(ext)
 
         if output[0]:
-            self.writePOData(filename + '.dialogs.' + ext,
-                             self.dialogs, self.dialogsHeader)
+            self.writePOData(f'{filename}.dialogs.{ext}', self.dialogs, self.dialogsHeader)
         if output[1]:
-            self.writePOData(filename + '.menus.' + ext,
-                             self.menus, self.menusHeader)
+            self.writePOData(f'{filename}.menus.{ext}', self.menus, self.menusHeader)
         if output[2]:
-            self.writePOData(filename + '.strings.' + ext,
-                             self.strings, self.stringsHeader)
+            self.writePOData(f'{filename}.strings.{ext}', self.strings, self.stringsHeader)
 
     def prepareHeaders(self, ext):
         if ext == 'pot':

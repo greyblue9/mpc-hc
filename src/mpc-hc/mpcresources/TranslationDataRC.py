@@ -74,8 +74,7 @@ class TranslationDataRC(TranslationData):
 
         with codecs.open(filename, 'r', detectEncoding(filename)) as f:
             for line in f:
-                match = TranslationDataRC.dialogStart.match(line)
-                if match:
+                if match := TranslationDataRC.dialogStart.match(line):
                     self.parseRCDialog(f, match.group(1))
                 elif TranslationDataRC.menuStart.match(line):
                     self.parseRCMenu(f)
@@ -88,16 +87,14 @@ class TranslationDataRC(TranslationData):
             if inDialog:
                 if line == u'END\r\n':
                     break
-                else:
-                    match = TranslationDataRC.dialogEntry.match(line)
-                    if match and not TranslationDataRC.excludedStrings.match(match.group(1)):
-                        self.dialogs[(id + '_' + match.group(2), match.group(1))] = ''
+                match = TranslationDataRC.dialogEntry.match(line)
+                if match and not TranslationDataRC.excludedStrings.match(match.group(1)):
+                    self.dialogs[f'{id}_{match.group(2)}', match.group(1)] = ''
             elif line == u'BEGIN\r\n':
                 inDialog = True
             elif line.startswith(u'CAPTION'):
-                match = TranslationDataRC.dialogEntry.match(line)
-                if match:
-                    self.dialogs[(id + '_CAPTION', match.group(1))] = ''
+                if match := TranslationDataRC.dialogEntry.match(line):
+                    self.dialogs[f'{id}_CAPTION', match.group(1)] = ''
 
     def parseRCMenu(self, f):
         codecs.openedMenus = 0
@@ -131,31 +128,26 @@ class TranslationDataRC(TranslationData):
                     if not TranslationDataRC.excludedStrings.match(s):
                         self.strings[(stringId, s)] = ''
                     waitingForString = False
-                else:
-                    match = TranslationDataRC.stringTableEntry.match(line)
-                    if match:
-                        stringId = match.group(1)
-                        s = match.group(2)
-                        if s:
-                            if not TranslationDataRC.excludedStrings.match(s):
-                                self.strings[(stringId, s)] = ''
-                        else:
-                            waitingForString = True
+                elif match := TranslationDataRC.stringTableEntry.match(line):
+                    stringId = match.group(1)
+                    if s := match.group(2):
+                        if not TranslationDataRC.excludedStrings.match(s):
+                            self.strings[(stringId, s)] = ''
+                    else:
+                        waitingForString = True
 
     def translateRC(self, filenameBase, filenameRC):
         config = ConfigParser.RawConfigParser()
         config.readfp(codecs.open('cfg\\' + filenameRC + '.cfg', 'r', 'utf8'))
 
-        with codecs.open(filenameBase, 'r', detectEncoding(filenameBase)) as fBase, \
-                codecs.open(filenameRC + '.rc', 'w', 'utf16') as fOut:
+        with (codecs.open(filenameBase, 'r', detectEncoding(filenameBase)) as fBase, codecs.open(f'{filenameRC}.rc', 'w', 'utf16') as fOut):
             skipLine = 0
             for line in fBase:
                 if skipLine > 0:
                     skipLine -= 1
                     continue
 
-                match = TranslationDataRC.dialogStart.match(line)
-                if match:
+                if match := TranslationDataRC.dialogStart.match(line):
                     fOut.write(line)
                     self.translateRCDialog(config, fBase, fOut, match.group(1))
                 elif TranslationDataRC.menuStart.match(line):
@@ -198,18 +190,16 @@ class TranslationDataRC(TranslationData):
                     fOut.write(line)
                     break
                 else:
-                    match = TranslationDataRC.dialogEntry.match(line)
-                    if match:
-                        s = self.dialogs.get((id + '_' + match.group(2), match.group(1)))
-                        if s:
+                    if match := TranslationDataRC.dialogEntry.match(line):
+                        if s := self.dialogs.get(
+                            (f'{id}_{match.group(2)}', match.group(1))
+                        ):
                             line = line[:match.start(1)] + s + line[match.end(1):]
             elif line == u'BEGIN\r\n':
                 inDialog = True
             elif line.startswith(u'CAPTION'):
-                match = TranslationDataRC.dialogEntry.match(line)
-                if match:
-                    s = self.dialogs.get((id + '_CAPTION', match.group(1)))
-                    if s:
+                if match := TranslationDataRC.dialogEntry.match(line):
+                    if s := self.dialogs.get((f'{id}_CAPTION', match.group(1))):
                         line = line[:match.start(1)] + s + line[match.end(1):]
             elif line.startswith(u'FONT'):
                 line = config.get('Info', 'font') + u'\r\n'
@@ -226,15 +216,12 @@ class TranslationDataRC(TranslationData):
                 if codecs.openedMenus <= 0:
                     fOut.write(line)
                     break
-            else:
-                match = TranslationDataRC.menuEntry.match(line)
-                if match:
-                    id = match.group(2)
-                    if not id:
-                        id = 'POPUP'
-                    s = self.menus.get((id, match.group(1)))
-                    if s:
-                        line = line[:match.start(1)] + s + line[match.end(1):]
+            elif match := TranslationDataRC.menuEntry.match(line):
+                id = match.group(2)
+                if not id:
+                    id = 'POPUP'
+                if s := self.menus.get((id, match.group(1))):
+                    line = line[:match.start(1)] + s + line[match.end(1):]
 
             fOut.write(line)
 
@@ -252,24 +239,22 @@ class TranslationDataRC(TranslationData):
             elif inStringTable:
                 if waitingForString:
                     line = line.strip(' \r\n"')
-                    s = self.strings.get((stringId, line))
-                    if s:
-                        line = linePrec + u' "' + s + u'"\r\n'
-                    else:
-                        line = linePrec + u' "' + line + u'"\r\n'
+                    line = (
+                        f'{linePrec} "{s}' + u'"\r\n'
+                        if (s := self.strings.get((stringId, line)))
+                        else f'{linePrec} "{line}' + u'"\r\n'
+                    )
                     waitingForString = False
-                else:
-                    match = TranslationDataRC.stringTableEntry.match(line)
-                    if match:
-                        stringId = match.group(1)
-                        s = match.group(2)
-                        if s:
-                            s = self.strings.get((stringId, s))
-                            if s:
-                                line = line[:match.start(2)] + s + line[match.end(2):]
-                        else:
-                            waitingForString = True
-                            linePrec = line[:-2]
+                elif match := TranslationDataRC.stringTableEntry.match(line):
+                    stringId = match.group(1)
+                    s = match.group(2)
+                    if s:
+                        s = self.strings.get((stringId, s))
+                    else:
+                        waitingForString = True
+                        linePrec = line[:-2]
 
+                    if s:
+                        line = line[:match.start(2)] + s + line[match.end(2):]
             if not waitingForString:
                 fOut.write(line)

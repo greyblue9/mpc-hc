@@ -29,7 +29,7 @@ if __name__ == '__main__':
     translationData.loadFromRC(r'..\mpc-hc.rc')
 
     translationDataOld = TranslationDataRC()
-    translationDataOld.loadFromRC(filename + '.rc')
+    translationDataOld.loadFromRC(f'{filename}.rc')
     translationDataOld.writePO('PO\\' + filename, 'pot')
 
     translationData.translateFromTemplate(translationDataOld)
